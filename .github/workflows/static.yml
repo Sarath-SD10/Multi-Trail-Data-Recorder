@@ -26,7 +26,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: 'https://github.com/Sarath-SD10/Multi-Trail-Data-Recorder/blob/master/app/src/main/assets/index.html'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
