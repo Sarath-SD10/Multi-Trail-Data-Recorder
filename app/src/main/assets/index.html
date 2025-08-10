@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Multi-Trial Data Recorder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      /* --- CSS Variables for Theming --- */
+      :root {
+        --primary-color: #570df8;
+        --primary-focus: #4506cb;
+        --primary-content: #ffffff;
+        --secondary-color: #f000b8;
+        --accent-color: #37cdbe;
+        --base-100: #ffffff;
+        --base-200: #f9fafb;
+        --base-300: #f2f2f2;
+        --base-content: #1f2937;
+        --error-color: #f87272;
+        --error-content: #ffffff;
+        --border-color: #e5e7eb;
+        --border-radius: 0.5rem;
+        --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      }
+
+      /* --- Base & Reset --- */
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: 'Poppins', sans-serif;
+        background-color: var(--base-100);
+        color: var(--base-content);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+        margin: 0;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+      /* --- Layout --- */
+      .container {
+        max-width: 56rem;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+      @media (min-width: 768px) {
+        .container { padding: 2rem; }
+      }
+      main#app {
+        background-color: var(--base-200);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: var(--box-shadow);
+        padding-bottom: 5rem;
+      }
+
+      /* --- Typography --- */
+      h1, h2, h3 { font-weight: 700; margin: 0 0 0.5em 0; }
+      h1 { font-size: 1.875rem; }
+      h2 { font-size: 1.5rem; }
+      h3 { font-size: 1.25rem; }
+      @media (min-width: 768px) {
+        h1 { font-size: 2.25rem; }
+        h2 { font-size: 1.75rem; }
+      }
+      .text-primary { color: var(--primary-color); }
+      .text-error { color: var(--error-color); }
+      .font-bold { font-weight: 700; }
+      .text-center { text-align: center; }
+
+      /* --- Buttons --- */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.6rem 1.2rem;
+        border-radius: var(--border-radius);
+        border: 1px solid transparent;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+        text-decoration: none;
+        white-space: nowrap;
+        font-size: 0.9rem;
+      }
+      .btn:disabled {
+        background-color: var(--base-300);
+        color: #9ca3af;
+        cursor: not-allowed;
+      }
+      .btn-primary { background-color: var(--primary-color); color: var(--primary-content); }
+      .btn-primary:hover { background-color: var(--primary-focus); }
+      .btn-secondary { background-color: var(--secondary-color); color: var(--primary-content); }
+      .btn-accent { background-color: var(--accent-color); color: var(--primary-content); }
+      .btn-error { background-color: var(--error-color); color: var(--error-content); }
+      .btn-ghost { background-color: transparent; border-color: transparent; }
+      .btn-ghost:hover { background-color: rgba(0, 0, 0, 0.05); }
+      .btn-circle {
+        width: 3rem;
+        height: 3rem;
+        padding: 0;
+        border-radius: 50%;
+      }
+       .btn-lg {
+        width: 4rem;
+        height: 4rem;
+        padding: 0;
+        border-radius: 50%;
+      }
+      .btn-xs {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+      }
+
+      /* --- Forms --- */
+      .form-control { margin-bottom: 1rem; }
+      .label { display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; }
+      .input, .textarea, .select {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--base-100);
+        transition: border-color 0.2s;
+      }
+      .input:focus, .textarea:focus, .select:focus {
+        outline: none;
+        border-color: var(--primary-color);
+      }
+      .textarea { min-height: 6rem; }
+      .checkbox {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-radius: 0.25rem;
+        border: 1px solid var(--border-color);
+        accent-color: var(--primary-color);
+      }
+      .toggle {
+        width: 3rem;
+        height: 1.5rem;
+        appearance: none;
+        background-color: #ccc;
+        border-radius: 1.5rem;
+        position: relative;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+      .toggle::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 1.25rem;
+        height: 1.25rem;
+        background-color: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+      }
+      .toggle:checked { background-color: var(--primary-color); }
+      .toggle:checked::before { transform: translateX(1.5rem); }
+
+      /* --- Modals (Generic) --- */
+      .modal-overlay {
+        position: fixed; inset: 0;
+        background-color: rgba(0, 0, 0, 0.75);
+        display: flex; align-items: center; justify-content: center;
+        z-index: 50; padding: 1rem;
+      }
+      .modal-box {
+        background-color: var(--base-100);
+        padding: 1.5rem;
+        border-radius: 1rem;
+        box-shadow: var(--box-shadow);
+        width: 100%;
+        max-width: 32rem;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .modal-box.max-w-2xl { max-width: 42rem; }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
+        flex-shrink: 0;
+      }
+      .modal-close-btn {
+        font-size: 1.875rem; font-weight: bold; cursor: pointer;
+        background: none; border: none; color: inherit;
+      }
+      .modal-content-body { overflow-y: auto; line-height: 1.6; }
+      .modal-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+      }
+
+      /* --- Tables --- */
+      .table-container {
+        overflow: auto;
+        max-height: 60vh;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+      }
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+      }
+      .table th, .table td {
+        padding: 0.75rem 1rem;
+        white-space: nowrap;
+        border-bottom: 1px solid var(--border-color);
+        border-right: 1px solid var(--border-color);
+      }
+      .table th:last-child, .table td:last-child {
+        border-right: none;
+      }
+      .table thead th {
+        background-color: var(--base-200);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .table tbody tr td:first-child, .table thead th:first-child {
+        position: sticky;
+        left: 0;
+        font-weight: 600;
+      }
+      .table thead th:first-child {
+        z-index: 20;
+      }
+      .table tbody tr {
+        background-color: var(--base-100);
+      }
+      .table tbody tr:nth-child(even) {
+        background-color: var(--base-200);
+      }
+      .table tbody tr td:first-child {
+        background-color: var(--base-100);
+      }
+      .table tbody tr:nth-child(even) td:first-child {
+        background-color: var(--base-200);
+      }
+      .table tbody tr:last-child th,
+      .table tbody tr:last-child td {
+        border-bottom: 0;
+      }
+
+      /* --- Header --- */
+      header { text-align: center; margin-bottom: 2rem; position: relative; }
+      #header-subtitle { margin-top: 0.5rem; }
+      #settings-btn {
+        position: absolute; top: 0; right: 0;
+        border: none; background: transparent; cursor: pointer;
+      }
+      #settings-btn svg { width: 1.5rem; height: 1.5rem; }
+
+      /* --- Step-specific Layouts --- */
+      .step-header, .step-footer {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      @media (min-width: 640px) {
+        .step-header, .step-footer {
+          flex-direction: row;
+        }
+      }
+      .button-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+      }
+      @media (min-width: 640px) {
+        .button-group {
+          flex-direction: row;
+          width: auto;
+        }
+      }
+
+      /* --- Trial Step --- */
+      /* NEW: Styles for the new trial grouping layout */
+      #trial-buttons-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+      .year-header {
+          margin-top: 1.5rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 2px solid var(--primary-color);
+          color: var(--primary-color);
+          font-size: 1.75rem;
+      }
+      .year-header:first-of-type {
+          margin-top: 0;
+      }
+      .season-header {
+          margin-top: 0.5rem;
+          margin-bottom: -0.5rem;
+          color: var(--base-content);
+          opacity: 0.8;
+          font-size: 1.25rem;
+          text-transform: capitalize;
+      }
+      .season-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      @media (min-width: 768px) {
+        .season-grid { grid-template-columns: repeat(2, 1fr); }
+      }
+      /* End of new styles */
+
+      .trial-button {
+        background: var(--base-100);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        box-shadow: var(--box-shadow);
+        border: 1px solid var(--border-color);
+        transition: all 0.2s ease-in-out;
+        cursor: pointer;
+      }
+      .trial-button:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+      .trial-button-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .trial-button-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+
+      /* --- Character Step --- */
+      #character-selection-container {
+        display: flex; flex-wrap: wrap; gap: 1rem;
+        justify-content: center; margin-bottom: 1.5rem;
+      }
+      #character-selection-container label {
+        display: flex; align-items: center; gap: 0.5rem;
+        padding: 0.75rem; background-color: var(--base-200);
+        border-radius: 0.5rem; cursor: pointer;
+      }
+      #character-selection-container label:hover { background-color: var(--base-300); }
+
+      /* --- Entry Step --- */
+      .progress-container {
+        width: 100%; height: 0.625rem;
+        background-color: var(--base-300);
+        border-radius: 9999px;
+      }
+      .progress-bar-fill {
+        background-color: var(--primary-color);
+        height: 100%;
+        border-radius: 9999px;
+        transition: width 0.3s ease-in-out;
+      }
+      .entry-form-container {
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: 0.5rem;
+        background-color: var(--base-100);
+      }
+      @media(min-width: 640px) {
+        .entry-form-container { padding: 1.5rem; }
+      }
+      #entry-form {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      @media (min-width: 640px) { #entry-form { grid-template-columns: repeat(3, 1fr); } }
+      @media (min-width: 1024px) { #entry-form { grid-template-columns: repeat(5, 1fr); } }
+      #entry-form > div { display: flex; flex-direction: column; align-items: center; }
+      #entry-form .input { width: 6rem; height: 4rem; text-align: center; }
+
+      /* --- Side Navigation --- */
+      #fixed-prev-btn, #fixed-next-btn {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+      }
+      #fixed-prev-btn {
+        left: 1rem;
+      }
+      #fixed-next-btn {
+        right: 1rem;
+      }
+      
+      /* --- Original Custom Styles (Kept) --- */
+      .fade-in { animation: fadeIn 0.5s ease-in-out; }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .action-button {
+        transition: all 0.2s ease-in-out;
+        filter: grayscale(100%); opacity: 0.3;
+        background: none; border: none; cursor: pointer; padding: 0;
+      }
+      .action-button:hover { transform: scale(1.1); opacity: 0.6; }
+      .action-button.active { filter: grayscale(0%); opacity: 1; }
+      .action-button.active:hover { transform: scale(1.05); }
+      .clickable-row:hover { background-color: #fef9c3 !important; cursor: pointer; }
+      .merged-indicator {
+        font-size: 0.7em; vertical-align: super; margin-left: 2px;
+        display: inline-block; width: 16px; height: 16px;
+        line-height: 16px; text-align: center; border-radius: 50%;
+        background-color: var(--accent-color); color: var(--primary-content);
+        font-weight: bold; cursor: help;
+      }
+      body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .content {
+            flex: 1;
+        }
+        /* Styling for the footer */
+        .site-footer {
+            background-color: #f2f2f2; /* Light grey background */
+            color: #555; /* Dark grey text */
+            padding: 10px 20px; /* Spacing inside the footer */
+            text-align: center; /* Center the text */
+            font-family: sans-serif; /* Clean, modern font */
+            font-size: 10px; /* Readable font size */
+        }
+    </style>
+  </head>
+  <body class="antialiased">
+    <div class="container">
+      <header>
+        <h1 class="text-primary">Multi-Trial Data Recorder</h1>
+        <p id="header-subtitle">Select a trial to begin.</p>
+        <button id="settings-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.5rem; height: 1.5rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.438.995s.145.755.438.995l1.003.827c.48.398.668 1.05.26 1.431l-1.296 2.247a1.125 1.125 0 01-1.37.49l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.333.183-.582.495-.645.87l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.063-.374-.313-.686-.645-.87a6.52 6.52 0 01-.22-.127c-.324-.196-.72-.257-1.075-.124l-1.217.456a1.125 1.125 0 01-1.37-.49l-1.296-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.437-.995s-.145-.755-.437-.995l-1.004-.827a1.125 1.125 0 01-.26-1.431l1.296-2.247a1.125 1.125 0 011.37-.49l1.217.456c.355.133.75.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.645-.87l.213-1.28z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+      </header>
+
+      <main id="app">
+        <div id="trial-step" class="fade-in">
+          <div class="step-header">
+            <h2>Your Trials</h2>
+            <div class="button-group">
+                 <button id="export-all-excel-btn" class="btn btn-accent">Export All (CSV)</button>
+                 <button id="import-trial-btn" class="btn btn-primary">Import from CSV</button>
+                 <button id="add-trial-btn" class="btn btn-secondary">Add New Trial</button>
+            </div>
+          </div>
+          <div id="trial-buttons-container"></div>
+        </div>
+
+        <div id="character-step" class="hidden fade-in">
+            <h2 class="text-center">Select Characters for <br><span id="char-select-trial-name" class="text-primary"></span></h2>
+            <p class="text-center" style="margin-bottom: 1.5rem;">Choose up to <span id="char-limit-display">6</span> characters to record for this session.</p>
+            <div id="character-selection-container"></div>
+            <div class="step-footer" style="margin-top: 2rem;">
+                <button id="back-to-trials-from-char-select-btn" class="btn btn-ghost">Back to Trials</button>
+                <button id="start-recording-btn" class="btn btn-primary" disabled>Start Recording</button>
+            </div>
+        </div>
+
+
+        <div id="entry-step" class="hidden fade-in">
+          <div class="step-header">
+            <div>
+              <h2 id="entry-title">Record Observations</h2>
+              <p style="margin-bottom: 0;">Enter data and remarks below.</p>
+            </div>
+            <div class="button-group">
+              <button id="go-to-summary-btn" class="btn btn-primary">Review & Submit</button>
+              <button id="change-trial-btn" class="btn btn-ghost">Change Trial</button>
+            </div>
+          </div>
+          <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+              <span id="progress-text">0 / 0</span>
+            </div>
+            <div class="progress-container">
+              <div id="progress-bar" class="progress-bar-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="entry-form-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+              <h3 id="genotype-title" class="text-primary"></h3>
+              <div id="actions-container" style="display: flex; align-items: center; gap: 1rem;"></div>
+            </div>
+            <div id="entry-form"></div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <label class="label" style="margin: 0;">Remarks</label>
+                <button id="toggle-remarks-btn" class="btn btn-ghost btn-xs">Show</button>
+            </div>
+            <div id="remarks-wrapper" class="hidden" style="margin-top: 0.5rem;">
+                <textarea id="remarks-input" rows="3" class="textarea" placeholder="Add any notes..."></textarea>
+            </div>
+
+          </div>
+        </div>
+
+        <div id="export-step" class="hidden fade-in">
+          <div class="step-header">
+            <div>
+              <h2 id="export-title">Review & Export</h2>
+              <p style="margin-bottom: 0;">Review your data and export it.</p>
+            </div>
+            <button id="back-to-trials-btn" class="btn btn-ghost">Change Trial</button>
+          </div>
+          <div class="button-group" style="margin-bottom: 1.5rem;">
+            <button id="export-csv-btn" class="btn btn-primary">Export Selected (CSV)</button>
+            <button id="export-json-btn" class="btn btn-secondary">Export Selected (JSON)</button>
+          </div>
+          <div id="review-section" style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <h3 class="text-error" style="margin-bottom: 1rem;">Items Flagged for Review (Click to Edit)</h3>
+            <div id="review-table-container" class="table-container"></div>
+          </div>
+          <div style="margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+            <h3 style="margin-bottom: 1rem;">All Raw Data (Click to Edit)</h3>
+            <div id="results-table-container" class="table-container">
+            </div>
+          </div>
+          <div style="margin-top: 2rem; text-align: center;">
+            <button id="back-to-edit-btn" style="color: var(--primary-color); text-decoration: underline; background: none; border: none; cursor: pointer;">
+              ← Back to Edit
+            </button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <div id="fixed-nav-container" class="hidden">
+        <button id="fixed-prev-btn" class="btn btn-primary btn-lg btn-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 2rem; height: 2rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+        </button>
+        <button id="fixed-next-btn" class="btn btn-primary btn-lg btn-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 2rem; height: 2rem;"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+        </button>
+    </div>
+
+    <audio id="next-sound" src="https://actions.google.com/sounds/v1/pagination/next_page.ogg" crossorigin="anonymous"></audio>
+    <audio id="prev-sound" src="https://actions.google.com/sounds/v1/pagination/previous_page.ogg" crossorigin="anonymous"></audio>
+    
+    <div id="camera-modal" class="modal-overlay hidden">
+        <div class="modal-box max-w-2xl" style="align-items: center;">
+            <video id="camera-video" style="width: 100%; border-radius: 0.5rem;" autoplay playsinline></video>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button id="capture-photo-btn" class="btn btn-primary" style="padding: 0.8rem 1.5rem;">Capture</button>
+                <button id="camera-close-btn" class="btn btn-ghost">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="text-primary">Settings</h3>
+                <button id="settings-modal-close-btn" class="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-content-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-control">
+                    <label class="label">Character Selection Limit</label>
+                    <input type="number" id="char-limit-input" class="input" min="1" max="20" />
+                </div>
+                 <div class="form-control">
+                    <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                        <span>Sound Effects</span> 
+                        <input type="checkbox" id="sound-toggle" class="toggle" />
+                    </label>
+                </div>
+                <hr style="border: none; border-top: 1px solid var(--border-color); margin: 1rem 0;">
+                <div style="background-color: rgba(248, 114, 114, 0.2); border-radius: 0.5rem; padding: 1rem; text-align: center;">
+                    <button id="clear-all-data-btn" class="btn btn-error">Clear All Website Data</button>
+                    <p style="font-size: 0.75rem; color: rgba(248, 114, 114, 0.9); margin-top: 0.5rem; margin-bottom: 0;">This will permanently delete all trials and recorded data.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="alert-modal" class="modal-overlay hidden">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 id="modal-title" class="text-primary">Notification</h3>
+          <button id="modal-close-btn" class="modal-close-btn">&times;</button>
+        </div>
+        <div id="modal-content" class="modal-content-body"></div>
+        </div>
+    </div>
+
+    <div id="trial-modal" class="modal-overlay hidden">
+        <div class="modal-box max-w-2xl">
+            <h3 id="trial-modal-title" class="text-primary" style="margin-bottom: 1.5rem; flex-shrink: 0;">Add New Trial</h3>
+            <div class="modal-content-body" style="padding-right: 0.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+                     <div class="form-control">
+                        <label for="trial-id-input" class="label">Trial ID*</label>
+                        <input type="text" id="trial-id-input" class="input">
+                    </div>
+                    <div class="form-control">
+                        <label for="trial-year-input" class="label">Year*</label>
+                        <input type="number" id="trial-year-input" placeholder="e.g. 2025" class="input">
+                    </div>
+                    <div class="form-control">
+                        <label for="trial-season-input" class="label">Season*</label>
+                        <input type="text" id="trial-season-input" placeholder="e.g. SUMMER" class="input">
+                    </div>
+                </div>
+                 <div class="form-control">
+                    <label for="trial-name-input" class="label">Trial Name*</label>
+                    <input type="text" id="trial-name-input" class="input">
+                </div>
+                <div class="form-control">
+                    <label for="trial-genotypes-input" class="label">Genotypes (comma-separated)*</label>
+                    <textarea id="trial-genotypes-input" rows="4" class="textarea" placeholder="e.g., G-01, G-02, G-03"></textarea>
+                </div>
+                <div class="form-control">
+                    <label for="trial-characters-input" class="label">Characters (NAME:type)*</label>
+                    <textarea id="trial-characters-input" rows="3" class="textarea" placeholder="e.g., PL_HEIGHT:num, LEAF_COLOR:text, YIELD:num"></textarea>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="trial-modal-cancel-btn" class="btn btn-ghost">Cancel</button>
+                <button id="trial-modal-save-btn" class="btn btn-primary">Save Trial</button>
+            </div>
+        </div>
+    </div>
+    
+    <input type="file" id="file-importer" class="hidden" accept=".csv">
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        try {
+          // --- STATE & DOM ---
+          let state = {}; 
+          let trials = [];
+          let currentTrial = null;
+          let selectedCharacters = [];
+          let editingTrialInternalId = null; 
+          let characterLimit = 6;
+          let isSoundEnabled = true;
+          let cameraStream = null;
+
+          // --- WEB AUDIO API SETUP ---
+          let audioContext;
+          let audioInitialized = false;
+
+          const dom = {
+            trialIdInput: document.getElementById("trial-id-input"),
+            trialYearInput: document.getElementById("trial-year-input"),
+            trialSeasonInput: document.getElementById("trial-season-input"),
+            app: document.getElementById("app"),
+            trialStep: document.getElementById("trial-step"),
+            characterStep: document.getElementById("character-step"),
+            entryStep: document.getElementById("entry-step"),
+            exportStep: document.getElementById("export-step"),
+            headerSubtitle: document.getElementById("header-subtitle"),
+            entryTitle: document.getElementById("entry-title"),
+            exportTitle: document.getElementById("export-title"),
+            settingsBtn: document.getElementById("settings-btn"),
+            settingsModal: document.getElementById("settings-modal"),
+            settingsModalCloseBtn: document.getElementById("settings-modal-close-btn"),
+            charLimitInput: document.getElementById("char-limit-input"),
+            charLimitDisplay: document.getElementById("char-limit-display"),
+            soundToggle: document.getElementById("sound-toggle"),
+            clearAllDataBtn: document.getElementById("clear-all-data-btn"),
+            cameraModal: document.getElementById("camera-modal"),
+            cameraVideo: document.getElementById("camera-video"),
+            capturePhotoBtn: document.getElementById("capture-photo-btn"),
+            cameraCloseBtn: document.getElementById("camera-close-btn"),
+            fixedNavContainer: document.getElementById("fixed-nav-container"),
+            fixedPrevBtn: document.getElementById("fixed-prev-btn"),
+            fixedNextBtn: document.getElementById("fixed-next-btn"),
+            nextSound: document.getElementById("next-sound"),
+            prevSound: document.getElementById("prev-sound"),
+            addTrialBtn: document.getElementById("add-trial-btn"),
+            importTrialBtn: document.getElementById("import-trial-btn"),
+            exportAllExcelBtn: document.getElementById("export-all-excel-btn"),
+            fileImporter: document.getElementById("file-importer"),
+            trialButtonsContainer: document.getElementById("trial-buttons-container"),
+            trialModal: document.getElementById("trial-modal"),
+            trialModalTitle: document.getElementById("trial-modal-title"),
+            trialNameInput: document.getElementById("trial-name-input"),
+            trialGenotypesInput: document.getElementById("trial-genotypes-input"),
+            trialCharactersInput: document.getElementById("trial-characters-input"),
+            trialModalCancelBtn: document.getElementById("trial-modal-cancel-btn"),
+            trialModalSaveBtn: document.getElementById("trial-modal-save-btn"),
+            charSelectTrialName: document.getElementById("char-select-trial-name"),
+            characterSelectionContainer: document.getElementById("character-selection-container"),
+            startRecordingBtn: document.getElementById("start-recording-btn"),
+            backToTrialsFromCharSelectBtn: document.getElementById("back-to-trials-from-char-select-btn"),
+            changeTrialBtn: document.getElementById("change-trial-btn"),
+            goToSummaryBtn: document.getElementById("go-to-summary-btn"),
+            backToTrialsBtn: document.getElementById("back-to-trials-btn"),
+            actionsContainer: document.getElementById("actions-container"),
+            entryForm: document.getElementById("entry-form"),
+            toggleRemarksBtn: document.getElementById("toggle-remarks-btn"),
+            remarksWrapper: document.getElementById("remarks-wrapper"),
+            remarksInput: document.getElementById("remarks-input"),
+            genotypeTitle: document.getElementById("genotype-title"),
+            progressBar: document.getElementById("progress-bar"),
+            progressText: document.getElementById("progress-text"),
+            exportCsvBtn: document.getElementById("export-csv-btn"),
+            exportJsonBtn: document.getElementById("export-json-btn"),
+            reviewSection: document.getElementById("review-section"),
+            reviewTableContainer: document.getElementById("review-table-container"),
+            resultsTableContainer: document.getElementById("results-table-container"),
+            backToEditBtn: document.getElementById("back-to-edit-btn"),
+            alertModal: document.getElementById("alert-modal"),
+            modalTitle: document.getElementById("modal-title"),
+            modalContent: document.getElementById("modal-content"),
+            modalCloseBtn: document.getElementById("modal-close-btn"),
+          };
+          
+          function initAudio() {
+              if (audioInitialized) return;
+              try {
+                  const AudioContext = window.AudioContext || window.webkitAudioContext;
+                  audioContext = new AudioContext();
+                  const nextSoundSource = audioContext.createMediaElementSource(dom.nextSound);
+                  const prevSoundSource = audioContext.createMediaElementSource(dom.prevSound);
+                  nextSoundSource.connect(audioContext.destination);
+                  prevSoundSource.connect(audioContext.destination);
+                  audioInitialized = true;
+              } catch (e) {
+                  console.error("Web Audio API is not supported.", e);
+              }
+          }
+
+          function unlockAudio() {
+              if (audioContext && audioContext.state === 'suspended') {
+                  audioContext.resume();
+              }
+          }
+          
+          document.body.addEventListener('click', unlockAudio, { once: true });
+          document.body.addEventListener('touchstart', unlockAudio, { once: true });
+
+          function playSound(soundElement) {
+              if (!isSoundEnabled || !audioInitialized) return;
+              if (audioContext.state === 'suspended') {
+                  audioContext.resume();
+              }
+              soundElement.currentTime = 0;
+              soundElement.play().catch(e => console.error("Error playing sound:", e));
+          }
+
+          function saveSettings() {
+              const settings = {
+                  charLimit: characterLimit,
+                  sound: isSoundEnabled
+              };
+              localStorage.setItem('plantRecorderSettings', JSON.stringify(settings));
+          }
+
+          function loadSettings() {
+              const settings = JSON.parse(localStorage.getItem('plantRecorderSettings')) || {};
+              characterLimit = settings.charLimit || 6;
+              isSoundEnabled = settings.sound !== false;
+
+              dom.charLimitInput.value = characterLimit;
+              dom.charLimitDisplay.textContent = characterLimit;
+              dom.soundToggle.checked = isSoundEnabled;
+          }
+
+          function getTrialFullName(trial) {
+              if (!trial) return "";
+              return `${trial.trialId}-${trial.year}${trial.season}-${trial.name}`;
+          }
+
+          function getFormattedDate() {
+            const date = new Date();
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          }
+
+          function updateView(screen) {
+              dom.trialStep.classList.add("hidden");
+              dom.characterStep.classList.add("hidden");
+              dom.entryStep.classList.add("hidden");
+              dom.exportStep.classList.add("hidden");
+              dom.fixedNavContainer.classList.add('hidden');
+
+              if (dom[screen + "Step"]) {
+                  dom[screen + "Step"].classList.remove("hidden");
+              }
+               if (screen === 'entry') {
+                  dom.fixedNavContainer.classList.remove('hidden');
+              }
+
+              const trialName = currentTrial ? getTrialFullName(currentTrial) : 'No Trial Selected';
+              const titles = {
+                  trial: 'Manage your trials or select one to begin.',
+                  character: `Select characters for: ${trialName}`,
+                  entry: `Recording data for: ${trialName}`,
+                  export: `Reviewing data for: ${trialName}`
+              };
+              dom.headerSubtitle.textContent = titles[screen] || '';
+          }
+
+          function showModalAlert(title, message, onConfirm, confirmText = 'OK') {
+              dom.modalTitle.textContent = title;
+              dom.modalContent.innerHTML = message;
+
+              const modalBox = dom.alertModal.querySelector('.modal-box');
+              let oldActions = modalBox.querySelector(".modal-actions");
+              if (oldActions) oldActions.remove();
+              
+              const actionsDiv = document.createElement('div');
+              actionsDiv.className = 'modal-actions';
+              
+              if (onConfirm) {
+                  const btn = document.createElement("button");
+                  btn.textContent = confirmText;
+                  btn.className = "btn btn-primary";
+                  btn.onclick = () => onConfirm();
+                  actionsDiv.appendChild(btn);
+              }
+
+              modalBox.appendChild(actionsDiv);
+              dom.alertModal.classList.remove("hidden");
+          }
+
+          function showConfirmationPrompt(title, message, onConfirm, onCancel, confirmText = 'Yes', cancelText = 'No') {
+              dom.modalTitle.textContent = title;
+              dom.modalContent.innerHTML = message;
+
+              const modalBox = dom.alertModal.querySelector('.modal-box');
+              let oldActions = modalBox.querySelector(".modal-actions");
+              if (oldActions) oldActions.remove();
+
+              const actionsDiv = document.createElement('div');
+              actionsDiv.className = 'modal-actions';
+
+              const cancelBtn = document.createElement("button");
+              cancelBtn.textContent = cancelText;
+              cancelBtn.className = "btn btn-ghost";
+              cancelBtn.onclick = () => {
+                  dom.alertModal.classList.add('hidden');
+                  if(onCancel) onCancel();
+              };
+
+              const confirmBtn = document.createElement("button");
+              confirmBtn.textContent = confirmText;
+              confirmBtn.className = "btn btn-primary";
+              confirmBtn.onclick = () => {
+                  dom.alertModal.classList.add('hidden');
+                  if(onConfirm) onConfirm();
+              };
+
+              actionsDiv.appendChild(cancelBtn);
+              actionsDiv.appendChild(confirmBtn);
+              modalBox.appendChild(actionsDiv);
+
+              dom.alertModal.classList.remove("hidden");
+          }
+
+          function showMergePrompt(newTrial, existingTrial) {
+              return new Promise((resolve) => {
+                  const title = "Potential Merge Detected";
+                  const message = `
+                      <p>An imported trial has the same name as an existing one:</p>
+                      <p style="font-weight: bold; margin: 0.5rem 0; padding: 0.5rem; background-color: var(--base-200); border-radius: 0.25rem;">${newTrial.name}</p>
+                      <p>What would you like to do?</p>
+                  `;
+                  dom.modalTitle.textContent = title;
+                  dom.modalContent.innerHTML = message;
+
+                  const modalBox = dom.alertModal.querySelector('.modal-box');
+                  let oldActions = modalBox.querySelector(".modal-actions");
+                  if (oldActions) oldActions.remove();
+
+                  const actionsDiv = document.createElement('div');
+                  actionsDiv.className = 'modal-actions';
+
+                  const mergeBtn = document.createElement("button");
+                  mergeBtn.textContent = "Merge";
+                  mergeBtn.className = "btn btn-primary";
+                  mergeBtn.onclick = () => { dom.alertModal.classList.add('hidden'); resolve('merge'); };
+
+                  const newBtn = document.createElement("button");
+                  newBtn.textContent = "Import as New";
+                  newBtn.className = "btn btn-secondary";
+                  newBtn.onclick = () => { dom.alertModal.classList.add('hidden'); resolve('new'); };
+                  
+                  const skipBtn = document.createElement("button");
+                  skipBtn.textContent = "Skip";
+                  skipBtn.className = "btn btn-ghost";
+                  skipBtn.onclick = () => { dom.alertModal.classList.add('hidden'); resolve('skip'); };
+                  
+                  actionsDiv.appendChild(skipBtn);
+                  actionsDiv.appendChild(newBtn);
+                  actionsDiv.appendChild(mergeBtn);
+                  modalBox.appendChild(actionsDiv);
+                  dom.alertModal.classList.remove("hidden");
+              });
+          }
+
+          function backToTrialSelection() {
+              showConfirmationPrompt(
+                  "Change Trial?",
+                  "Your progress is saved. Return to trial selection?",
+                  () => {
+                      currentTrial = null;
+                      state = {};
+                      localStorage.removeItem("lastActiveTrial");
+                      updateView("trial");
+                  },
+                  null,
+                  "Yes, Change Trial",
+                  "Cancel"
+              );
+          }
+
+           const getStorageKey = (internalId) => `plantRecorderState_${internalId}`;
+           
+           function saveState() {
+              if (currentTrial) {
+                  localStorage.setItem(getStorageKey(currentTrial.internalId), JSON.stringify(state));
+                  localStorage.setItem("lastActiveTrial", currentTrial.internalId);
+              }
+           }
+
+           function saveTrials() {
+              localStorage.setItem('plantRecorderTrials_v2', JSON.stringify(trials));
+           }
+
+           function loadTrials() {
+              const savedTrials = localStorage.getItem('plantRecorderTrials_v2');
+              trials = savedTrials ? JSON.parse(savedTrials) : [];
+              renderTrialButtons();
+           }
+
+           function loadTrial(internalId) {
+              currentTrial = trials.find(t => t.internalId === internalId);
+              if (currentTrial) {
+                  dom.charSelectTrialName.textContent = getTrialFullName(currentTrial);
+                  renderCharacterSelection();
+                  updateView('character');
+              } else {
+                  console.error("Could not find trial with ID:", internalId);
+                  updateView('trial');
+              }
+           }
+           
+          function startDataEntry() {
+              const savedState = localStorage.getItem(getStorageKey(currentTrial.internalId));
+              state = savedState ? JSON.parse(savedState) : setDefaultState(currentTrial);
+              
+              const trialChars = currentTrial.characters.map(c => c.name);
+              Object.keys(state.data).forEach(genoName => {
+                  trialChars.forEach(charName => {
+                      if (!(charName in state.data[genoName])) {
+                          state.data[genoName][charName] = "";
+                      }
+                  });
+              });
+
+              updateView("entry");
+              renderCurrentForm();
+          }
+
+          function setDefaultState(trial) {
+              if (!trial) return {};
+              const newState = {
+                  data: {},
+                  currentIndex: 0,
+              };
+              trial.genotypes.forEach((genoObj) => {
+                  newState.data[genoObj.name] = {
+                      isFavorite: false,
+                      needsReview: false,
+                      remarks: "",
+                      photoCount: 0,
+                      ...trial.characters.reduce(
+                          (acc, char) => ({ ...acc, [char.name]: "" }), {}
+                      ),
+                  };
+              });
+              return newState;
+          }
+
+          function renderTrialButtons() {
+              dom.trialButtonsContainer.innerHTML = '';
+              if (trials.length === 0) {
+                  dom.trialButtonsContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center;">No trials found. Click 'Add New Trial' or 'Import' to get started.</p>`;
+                  return;
+              }
+
+              const seasonOrder = { 'SPRING': 1, 'SUMMER': 2, 'AUTUMN': 3, 'FALL': 3, 'WINTER': 4 };
+              
+              trials.sort((a, b) => {
+                  
+                  if (b.year !== a.year) {
+                      return b.year - a.year;
+                  }
+                  
+                  const seasonA = seasonOrder[a.season.toUpperCase()] || 99;
+                  const seasonB = seasonOrder[b.season.toUpperCase()] || 99;
+                  return seasonA - seasonB;
+              });
+
+              let currentYear = null;
+              let currentSeason = null;
+              let seasonContainer = null;
+
+              trials.forEach(trial => {
+                
+                  if (trial.year !== currentYear) {
+                      currentYear = trial.year;
+                      currentSeason = null;
+                      const yearHeader = document.createElement('h2');
+                      yearHeader.className = 'year-header';
+                      yearHeader.textContent = currentYear;
+                      dom.trialButtonsContainer.appendChild(yearHeader);
+                  }
+
+                  if (trial.season !== currentSeason) {
+                      currentSeason = trial.season;
+                      const seasonHeader = document.createElement('h3');
+                      seasonHeader.className = 'season-header';
+                      seasonHeader.textContent = currentSeason;
+                      dom.trialButtonsContainer.appendChild(seasonHeader);
+
+                      seasonContainer = document.createElement('div');
+                      seasonContainer.className = 'season-grid';
+                      dom.trialButtonsContainer.appendChild(seasonContainer);
+                  }
+                  
+                  const buttonContainer = document.createElement('div');
+                  buttonContainer.className = `trial-button`;
+                  buttonContainer.innerHTML = `
+                      <div class="trial-button-content">
+                         <div>
+                              <p class="font-bold text-primary">${trial.trialId} - ${trial.name}</p>
+                              <p style="font-size: 0.9rem; opacity: 0.7;">${trial.year} - ${trial.season}</p>
+                              <p style="font-size: 0.75rem; opacity: 0.5; margin-top: 0.5rem;">Genotypes: ${trial.genotypes.length}</p>
+                         </div>
+                         <div class="trial-button-actions">
+                              <button data-action="edit" data-id="${trial.internalId}" title="Edit Trial" class="btn btn-ghost btn-xs">✏️</button>
+                              <button data-action="delete" data-id="${trial.internalId}" title="Delete Trial" class="btn btn-ghost btn-xs">🗑️</button>
+                          </div>
+                      </div>
+                  `;
+                  buttonContainer.addEventListener('click', (e) => {
+                      if (!e.target.closest('button')) {
+                          loadTrial(trial.internalId);
+                      }
+                  });
+                  
+                  if(seasonContainer) {
+                      seasonContainer.appendChild(buttonContainer);
+                  }
+              });
+          }
+          
+          function renderCharacterSelection() {
+              const trial = currentTrial;
+              dom.characterSelectionContainer.innerHTML = '';
+              trial.characters.forEach(char => {
+                  const mergedIndicator = char.isMerged ? `<span class="merged-indicator" title="Merged">M</span>` : '';
+                  const checkboxDiv = document.createElement('div');
+                  checkboxDiv.innerHTML = `<label><input type="checkbox" data-char-name="${char.name}" class="checkbox"><span class="font-bold">${char.name}${mergedIndicator} <span style="font-size: 0.75rem; opacity: 0.7;">(${char.type})</span></span></label>`;
+                  dom.characterSelectionContainer.appendChild(checkboxDiv);
+              });
+              selectedCharacters = [];
+              dom.startRecordingBtn.disabled = true;
+          }
+
+          function renderCurrentForm() {
+              if (!currentTrial || !currentTrial.genotypes || currentTrial.genotypes.length === 0) {
+                  showModalAlert("Error", "Could not render form, data is missing.", () => dom.alertModal.classList.add('hidden'));
+                  updateView("trial");
+                  return;
+              }
+
+              if (!state.data) state = setDefaultState(currentTrial);
+              
+              const genotypeObj = currentTrial.genotypes[state.currentIndex];
+              if (!genotypeObj) return; 
+              
+              const genotypeName = genotypeObj.name;
+              const genotypeData = state.data[genotypeName];
+              if (!genotypeData) return; 
+              
+              const mergedIndicator = genotypeObj.isMerged ? `<span class="merged-indicator" title="Merged">M</span>` : '';
+              dom.genotypeTitle.innerHTML = `Genotype: ${genotypeName}${mergedIndicator}`;
+
+              dom.entryForm.innerHTML = "";
+              
+              const photoCountBadge = genotypeData.photoCount > 0
+                  ? `<span style="font-weight: 600; background-color: var(--accent-color); color: var(--primary-content); padding: 0.2rem 0.6rem; border-radius: 99px; font-size: 0.8rem; margin-left: -0.5rem; user-select: none;">${genotypeData.photoCount}</span>`
+                  : '';
+
+              dom.actionsContainer.innerHTML = `
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <button data-action="camera" title="Take Photo" class="action-button active" style="font-size: 1.5rem;">📷</button>
+                      ${photoCountBadge}
+                  </div>
+                  <button data-action="favorite" title="Mark as Favorite" class="action-button ${genotypeData.isFavorite ? "active" : ""}" style="font-size: 1.5rem;">⭐</button>
+                  <button data-action="review" title="Flag for Review" class="action-button ${genotypeData.needsReview ? "active" : ""}" style="font-size: 1.5rem;">❗</button>
+              `;
+
+              selectedCharacters.forEach((char) => {
+                  const value = genotypeData[char.name] || "";
+                  const wrapper = document.createElement("div");
+                  let inputHTML = '';
+                  if (char.type === 'num') {
+                      inputHTML = `<input type="number" inputmode="decimal" step="any" value="${value}" data-char-name="${char.name}" class="input">`;
+                  } else {
+                      inputHTML = `<input type="text" value="${value}" data-char-name="${char.name}" class="input">`;
+                  }
+                  const charMergedIndicator = char.isMerged ? `<span class="merged-indicator" title="Merged">M</span>` : '';
+                  wrapper.innerHTML = `<label class="label">${char.name}${charMergedIndicator}</label>${inputHTML}`;
+                  dom.entryForm.appendChild(wrapper);
+              });
+              
+              dom.remarksInput.value = genotypeData.remarks || "";
+              dom.remarksWrapper.classList.add("hidden");
+              dom.toggleRemarksBtn.textContent = "Show";
+
+              updateNavigation();
+              updateProgressBar();
+
+              const firstInput = dom.entryForm.querySelector('input');
+              if (firstInput) {
+                firstInput.focus();
+                firstInput.select();
+              }
+          }
+
+          function updateNavigation() {
+              if (!currentTrial || !currentTrial.genotypes) return;
+              const total = currentTrial.genotypes.length;
+              dom.fixedPrevBtn.disabled = state.currentIndex === 0;
+              dom.fixedNextBtn.disabled = state.currentIndex === total - 1;
+          }
+
+          function updateProgressBar() {
+              if (!currentTrial || !currentTrial.genotypes) return;
+              const total = currentTrial.genotypes.length;
+              const percent = total > 0 ? ((state.currentIndex + 1) / total) * 100 : 0;
+              dom.progressBar.style.width = `${percent}%`;
+              dom.progressText.textContent = `${state.currentIndex + 1} / ${total}`;
+          }
+
+          function next() {
+              if (state.currentIndex < currentTrial.genotypes.length - 1) {
+                  state.currentIndex++;
+                  playSound(dom.nextSound);
+                  renderCurrentForm();
+              } else {
+                  prepareExportScreen();
+              }
+              saveState();
+          }
+
+          function prev() {
+              if (state.currentIndex > 0) {
+                  state.currentIndex--;
+                  playSound(dom.prevSound);
+                  renderCurrentForm();
+                  saveState();
+              }
+          }
+          
+          function prepareExportScreen() {
+              if (!currentTrial) return;
+
+              if (selectedCharacters.length === 0) {
+                  const message = '<p class="text-center" style="padding: 1rem;">No characters were selected for this session. Go back to the data entry screen to see data.</p>';
+                  dom.reviewSection.classList.add("hidden");
+                  dom.reviewTableContainer.innerHTML = '';
+                  dom.resultsTableContainer.innerHTML = message;
+                  updateView("export");
+                  return;
+              }
+
+              const selectedCharacterNames = selectedCharacters.map(c => c.name);
+              const headers = ["Genotype", ...selectedCharacterNames, "Favorite", "Review", "Remarks"];
+              const reviewItems = currentTrial.genotypes.filter((genoObj) => state.data[genoObj.name]?.needsReview);
+              
+              dom.reviewSection.classList.toggle("hidden", reviewItems.length === 0);
+              if (reviewItems.length > 0) {
+                  dom.reviewTableContainer.innerHTML = createTableHTML(headers, reviewItems);
+              } else {
+                  dom.reviewTableContainer.innerHTML = '<p class="text-center" style="padding: 1rem;">No items were flagged for review.</p>';
+              }
+              dom.resultsTableContainer.innerHTML = createTableHTML(headers, currentTrial.genotypes);
+              updateView("export");
+          }
+
+          function createTableHTML(headers, genotypeObjList) {
+              const headerHTML = `<thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead>`;
+              const bodyHTML = `<tbody>${genotypeObjList.map((genoObj) => {
+                  const genoName = genoObj.name;
+                  const d = state.data[genoName];
+                  if (!d) return '';
+                  const genoIndex = currentTrial.genotypes.findIndex(g => g.name === genoName);
+                  
+                  const rowData = headers.map(header => {
+                      let cellContent = '';
+                      switch(header) {
+                          case 'Genotype':
+                              cellContent = genoName + (genoObj.isMerged ? ' <span class="merged-indicator" title="Merged">M</span>' : '');
+                              break;
+                          case 'Favorite':
+                              cellContent = d.isFavorite ? "✔️" : "";
+                              break;
+                          case 'Review':
+                              cellContent = d.needsReview ? "❗" : "";
+                              break;
+                          case 'Remarks':
+                              cellContent = d.remarks || "";
+                              break;
+                          default:
+                              cellContent = d[header] !== undefined ? (d[header] || "-") : "-";
+                              break;
+                      }
+                      return `<td>${cellContent}</td>`;
+                  });
+
+                  return `<tr class="clickable-row" data-genotype-index="${genoIndex}">${rowData.join("")}</tr>`;
+              }).join("")}</tbody>`;
+              return `<table class="table">${headerHTML}${bodyHTML}</table>`;
+          }
+
+          function exportFile(data, fileName, mimeType = 'text/plain;charset=utf-8', trialFolderName = '') {
+              const blob = data instanceof Blob ? data : new Blob([data], { type: mimeType });
+              
+              if (window.Android && typeof window.Android.saveFile === 'function') {
+                  const reader = new FileReader();
+                  reader.readAsDataURL(blob); 
+                  reader.onload = function () {
+                      const base64data = reader.result.split(',')[1];
+                      window.Android.saveFile(base64data, fileName, mimeType, trialFolderName);
+                  };
+              } else {
+                  const link = document.createElement("a");
+                  link.href = URL.createObjectURL(blob);
+                  link.download = fileName;
+                  link.click();
+                  URL.revokeObjectURL(link.href);
+              }
+          }
+
+           function exportCSV() {
+              if (selectedCharacters.length === 0) {
+                showModalAlert("No Characters Selected", "You must select characters during the 'Select Characters' step to export data.", () => dom.alertModal.classList.add('hidden'));
+                return;
+              }
+              const selectedCharacterNames = selectedCharacters.map(c => c.name);
+              const headers = ["genotype", ...selectedCharacterNames, "isFavorite", "needsReview", "remarks"];
+              let csvContent = headers.join(",") + "\r\n";
+              
+              currentTrial.genotypes.forEach((genoObj) => {
+                  const d = state.data[genoObj.name];
+                  const rowData = [
+                      genoObj.name,
+                      ...selectedCharacterNames.map((charName) => `"${d[charName] || ''}"`),
+                      d.isFavorite,
+                      d.needsReview,
+                      `"${(d.remarks || "").replace(/"/g, '""')}"`,
+                  ];
+                  csvContent += rowData.join(",") + "\r\n";
+              });
+              const date = getFormattedDate();
+              exportFile(csvContent, `${getTrialFullName(currentTrial)}_${date}.csv`, 'text/csv;charset=utf-8', '');
+          }
+
+          function exportJSON() {
+              if (selectedCharacters.length === 0) {
+                showModalAlert("No Characters Selected", "You must select characters during the 'Select Characters' step to export data.", () => dom.alertModal.classList.add('hidden'));
+                return;
+              }
+              const selectedCharacterNames = selectedCharacters.map(c => c.name);
+              const filteredData = {};
+              Object.keys(state.data).forEach(genoName => {
+                filteredData[genoName] = {
+                  isFavorite: state.data[genoName].isFavorite,
+                  needsReview: state.data[genoName].needsReview,
+                  remarks: state.data[genoName].remarks,
+                  photoCount: state.data[genoName].photoCount
+                };
+                selectedCharacterNames.forEach(charName => {
+                  filteredData[genoName][charName] = state.data[genoName][charName];
+                });
+              });
+
+              const exportData = {
+                  trialInfo: {
+                    ...currentTrial,
+                    characters: selectedCharacters
+                  },
+                  sessionData: filteredData
+              }
+              const date = getFormattedDate();
+              const fileContent = JSON.stringify(exportData, null, 2);
+              exportFile(fileContent, `${getTrialFullName(currentTrial)}_${date}.json`, 'application/json;charset=utf-8', '');
+          }
+          
+          function parseCharactersInput(input) {
+              const characters = [];
+              const addedNames = new Set();
+              const pairs = input.split(',').map(p => p.trim()).filter(Boolean);
+              for (const pair of pairs) {
+                  const parts = pair.split(':').map(p => p.trim());
+                  const name = parts[0].toUpperCase();
+                  if (!name || addedNames.has(name)) continue;
+
+                  const type = parts[1] ? parts[1].toLowerCase() : 'text';
+                  if (type !== 'num' && type !== 'text') {
+                      showModalAlert('Invalid Character Type', `The character "${name}" has an invalid type "${type}". Please use 'num' or 'text'.`, () => dom.alertModal.classList.add('hidden'));
+                      return null;
+                  }
+                  addedNames.add(name);
+                  characters.push({ name, type, isMerged: false });
+              }
+              return characters;
+          }
+          
+          function parseCsvLine(text) {
+              const regex = /(?:^|,)(?:"([^"]*(?:""[^"]*)*)"|([^,"]*))/g;
+              let a = [];
+              let m;
+              while ((m = regex.exec(text))) {
+                  a.push(m[1] ? m[1].replace(/""/g, '"') : m[2]);
+              }
+              return a;
+          }
+
+          function sanitizeSheetName(name) {
+              return name.replace(/[:\\/?*[\]]/g, "").substring(0, 31);
+          }
+          
+          /*
+          function exportAllToExcel() {
+              if (trials.length === 0) {
+                  showModalAlert("No Data", "There are no trials to export.", () => dom.alertModal.classList.add('hidden'));
+                  return;
+              }
+
+              const proceedWithExport = () => {
+                const wb = XLSX.utils.book_new();
+                trials.forEach(trial => {
+                    try {
+                        const sheetData = [];
+                        sheetData.push(["Trial ID:", trial.trialId]);
+                        sheetData.push(["Trial Name:", trial.name]);
+                        sheetData.push(["Year:", trial.year]);
+                        sheetData.push(["Season:", trial.season]);
+                        sheetData.push([]);
+
+                        const characterNames = trial.characters.map(c => c.name);
+                        const headers = ["Genotype", ...characterNames, "isFavorite", "needsReview", "Remarks"];
+                        sheetData.push(headers);
+
+                        let sessionData = null;
+                        const sessionDataString = localStorage.getItem(getStorageKey(trial.internalId));
+                        if (sessionDataString) {
+                            try {
+                                sessionData = JSON.parse(sessionDataString);
+                            } catch (e) {
+                                console.error(`Could not parse data for trial ${trial.name}:`, e);
+                            }
+                        }
+
+                        trial.genotypes.forEach(genoObj => {
+                            const d = sessionData?.data?.[genoObj.name] || {};
+                            const row = [
+                                genoObj.name,
+                                ...characterNames.map(name => d[name] || ""),
+                                d.isFavorite || false,
+                                d.needsReview || false,
+                                d.remarks || ""
+                            ];
+                            sheetData.push(row);
+                        });
+                        
+                        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                        const sheetName = sanitizeSheetName(getTrialFullName(trial));
+                        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+                    } catch (error) {
+                        console.error(`Failed to process and export trial: ${trial?.name || 'Unknown Trial'}. Skipping.`, error);
+                    }
+                });
+
+                try {
+                    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                    const date = getFormattedDate();
+                    const fileName = `All_Trial_Data_${date}.xlsx`;
+                    const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                    exportFile(excelBuffer, fileName, mimeType, '');
+                } catch (error) {
+                    console.error("Failed to write the final Excel file.", error);
+                    showModalAlert("Export Failed", "An error occurred while generating the final Excel file.", () => dom.alertModal.classList.add('hidden'));
+                }
+              };
+
+              if (trials.length > 5) { 
+                  showConfirmationPrompt(
+                    "Large Export Warning",
+                    `You are exporting ${trials.length} trials. On some devices this might cause the browser to crash. Do you want to continue?`,
+                    proceedWithExport,
+                    null,
+                    "Yes, Continue",
+                    "Cancel"
+                  );
+              } else {
+                  proceedWithExport();
+              }
+          }
+          
+          */
+          function exportAllToExcel() {
+              if (trials.length === 0) {
+                  showModalAlert("No Data", "There are no trials to export.", () => dom.alertModal.classList.add('hidden'));
+                  return;
+              }
+
+              const proceedWithExport = () => {
+                  let csvContent = "";
+
+                  trials.forEach(trial => {
+                      try {
+                          // Trial metadata
+                          csvContent += `\r\n\r\n# Trial Metadata\r\n`;
+                          csvContent += `Trial ID:,${trial.trialId}\r\n`;
+                          csvContent += `Trial Name:,${trial.name}\r\n`;
+                          csvContent += `Year:,${trial.year}\r\n`;
+                          csvContent += `Season:,${trial.season}\r\n\r\n`;
+
+                          // Headers
+                          const characterNames = trial.characters.map(c => c.name);
+                          const headers = ["Genotype", ...characterNames, "isFavorite", "needsReview", "Remarks"];
+                          csvContent += headers.join(",") + "\r\n";
+
+                          // Load session data
+                          let sessionData = null;
+                          const sessionDataString = localStorage.getItem(getStorageKey(trial.internalId));
+                          if (sessionDataString) {
+                              try {
+                                  sessionData = JSON.parse(sessionDataString);
+                              } catch (e) {
+                                  console.error(`Could not parse data for trial ${trial.name}:`, e);
+                              }
+                          }
+
+                          // Rows
+                          trial.genotypes.forEach(genoObj => {
+                              const d = sessionData?.data?.[genoObj.name] || {};
+                              const row = [
+                                  `"${genoObj.name.replace(/"/g, '""')}"`,
+                                  ...characterNames.map(name => `"${(d[name] || "").toString().replace(/"/g, '""')}"`),
+                                  d.isFavorite || false,
+                                  d.needsReview || false,
+                                  `"${(d.remarks || "").toString().replace(/"/g, '""')}"`
+                              ];
+                              csvContent += row.join(",") + "\r\n";
+                          });
+                      } catch (error) {
+                          console.error(`Failed to process and export trial: ${trial?.name || 'Unknown Trial'}. Skipping.`, error);
+                      }
+                  });
+
+                  try {
+                      const date = getFormattedDate();
+                      const fileName = `All_Trial_Data_${date}.csv`;
+                      const mimeType = 'text/csv;charset=utf-8';
+                      const bom = new Uint8Array([0xEF, 0xBB, 0xBF]); // UTF-8 BOM for Excel compatibility
+
+                      exportFile(csvContent, fileName, mimeType, bom);
+                  } catch (error) {
+                      console.error("Failed to write the final CSV file.", error);
+                      showModalAlert("Export Failed", "An error occurred while generating the final CSV file.", () => dom.alertModal.classList.add('hidden'));
+                  }
+              };
+
+              if (trials.length > 5) {
+                  showConfirmationPrompt(
+                      "Large Export Warning",
+                      `You are exporting ${trials.length} trials. On some devices this might cause the browser to crash. Do you want to continue?`,
+                      proceedWithExport,
+                      null,
+                      "Yes, Continue",
+                      "Cancel"
+                  );
+              } else {
+                  proceedWithExport();
+              }
+          }
+
+          function handleClearAllData() {
+              showConfirmationPrompt("⚠️ Clear All Data?", 
+                  "This is irreversible and will delete ALL trials, recorded data, and settings. Are you absolutely sure?", 
+                  () => {
+                      trials.forEach(trial => {
+                          localStorage.removeItem(getStorageKey(trial.internalId));
+                      });
+                      localStorage.removeItem('plantRecorderTrials_v2');
+                      localStorage.removeItem('plantRecorderSettings');
+                      localStorage.removeItem('lastActiveTrial');
+                      
+                      trials = [];
+                      currentTrial = null;
+                      state = {};
+
+                      renderTrialButtons();
+                      updateView('trial');
+                      showModalAlert("Success", "All website data has been cleared.", () => dom.alertModal.classList.add('hidden'));
+                  }, 
+                  null,
+                  "Yes, Delete Everything",
+                  "Cancel"
+              );
+          }
+
+          async function openCamera() {
+              if (!window.isSecureContext && !window.Android) {
+                  showModalAlert("Insecure Connection", "Camera access requires a secure (HTTPS) connection.", () => dom.alertModal.classList.add('hidden'));
+                  return;
+              }
+              if (!('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices)) {
+                  showModalAlert("Unsupported Browser", "Camera access is not available in this browser.", () => dom.alertModal.classList.add('hidden'));
+                  return;
+              }
+              try {
+                  cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                  dom.cameraVideo.srcObject = cameraStream;
+                  dom.cameraModal.classList.remove('hidden');
+              } catch (err) {
+                  console.error("Camera error:", err.name, err.message);
+                  let errorMessage = "Could not access the camera.";
+                  if (err.name === "NotAllowedError" || err.name === "SecurityError") {
+                      errorMessage = "Camera permission was denied. Please go to your browser's site settings and grant camera access. You may need to reload the page afterwards.";
+                  } else if (err.name === "NotFoundError") {
+                      errorMessage = "No camera was found on your device.";
+                  }
+                  showModalAlert("Camera Access Error", errorMessage, () => dom.alertModal.classList.add('hidden'));
+              }
+          }
+
+          function closeCamera() {
+              if (cameraStream) {
+                  cameraStream.getTracks().forEach(track => track.stop());
+              }
+              dom.cameraModal.classList.add('hidden');
+          }
+
+          function capturePhoto() {
+              if (!dom.cameraVideo.videoWidth || !dom.cameraVideo.videoHeight) {
+                  showModalAlert("Camera Error", "The camera is not ready yet. Please wait a moment and try again.", () => dom.alertModal.classList.add('hidden'));
+                  console.error("capturePhoto called before video stream dimensions were available.");
+                  return;
+              }
+              const canvas = document.createElement('canvas');
+              canvas.width = dom.cameraVideo.videoWidth;
+              canvas.height = dom.cameraVideo.videoHeight;
+              const context = canvas.getContext('2d');
+              context.drawImage(dom.cameraVideo, 0, 0, canvas.width, canvas.height);
+
+              const genotypeName = currentTrial.genotypes[state.currentIndex].name;
+              const genotypeData = state.data[genotypeName];
+              
+              genotypeData.photoCount = (genotypeData.photoCount || 0) + 1;
+              const photoNumber = genotypeData.photoCount;
+              saveState();
+              
+              renderCurrentForm();
+
+              // Construct the new filename and the folder name from trial details
+              const trialFolderName = getTrialFullName(currentTrial);
+              const fileName = `${currentTrial.trialId}-${currentTrial.season}_${currentTrial.year}-${currentTrial.name}-${genotypeName}-${photoNumber}.jpg`;
+              
+              canvas.toBlob(blob => {
+                  exportFile(blob, fileName, 'image/jpeg', trialFolderName);
+              }, 'image/jpeg', 0.9);
+
+              closeCamera();
+          }
+
+          dom.addTrialBtn.addEventListener('click', () => {
+              editingTrialInternalId = null;
+              dom.trialModalTitle.textContent = 'Add New Trial';
+              dom.trialIdInput.value = '';
+              dom.trialYearInput.value = '';
+              dom.trialSeasonInput.value = '';
+              dom.trialNameInput.value = '';
+              dom.trialGenotypesInput.value = '';
+              dom.trialCharactersInput.value = '';
+              dom.trialIdInput.disabled = false;
+              dom.trialModal.classList.remove('hidden');
+          });
+
+          dom.trialModalCancelBtn.addEventListener('click', () => {
+              dom.trialModal.classList.add('hidden');
+          });
+
+          dom.trialModalSaveBtn.addEventListener('click', () => {
+              const genotypeNames = [...new Set(dom.trialGenotypesInput.value.split(',').map(g => g.trim()).filter(Boolean))];
+              const trialData = {
+                  trialId: dom.trialIdInput.value.trim(),
+                  year: dom.trialYearInput.value.trim(),
+                  season: dom.trialSeasonInput.value.trim().toUpperCase(),
+                  name: dom.trialNameInput.value.trim(),
+                  genotypes: genotypeNames.map(name => ({ name, isMerged: false })),
+                  characters: parseCharactersInput(dom.trialCharactersInput.value)
+              };
+
+              if (!trialData.trialId || !trialData.year || !trialData.season || !trialData.name || !trialData.genotypes.length === 0 || !trialData.characters || trialData.characters.length === 0) {
+                  showModalAlert('Error', 'Please fill in all required (*) fields.', () => dom.alertModal.classList.add('hidden'));
+                  return;
+              }
+
+              if (editingTrialInternalId) {
+                  const index = trials.findIndex(t => t.internalId === editingTrialInternalId);
+                  if (index !== -1) {
+                      trials[index] = { ...trials[index], ...trialData };
+                  }
+              } else {
+                  trials.push({ ...trialData, internalId: crypto.randomUUID() });
+              }
+
+              saveTrials();
+              renderTrialButtons();
+              dom.trialModal.classList.add('hidden');
+          });
+          
+          dom.importTrialBtn.addEventListener('click', () => {
+              const exampleCSV = `
+                  <p style="margin-bottom: 0.5rem;">Header must be: <code>TRIAL_ID,YEAR,SEASON,TRIAL_NAME,CHARACTERS,GENOTYPES</code></p>
+                  <p style="margin-bottom: 1rem;">The CHARACTERS value must be in double quotes.</p>
+                  <pre style="background-color: var(--base-200); padding: 0.5rem; border-radius: 0.25rem; font-size: 0.8rem;"><code>TRIAL_ID,YEAR,SEASON,TRIAL_NAME,CHARACTERS,GENOTYPES
+EXP-01,2025,SUMMER,Rust Screening,"RUST_SCORE:num,NOTES:text",G-01,G-02,G-03</code></pre>
+              `;
+              showModalAlert("Import Trials from CSV", exampleCSV, () => { 
+                dom.fileImporter.click(); 
+                dom.alertModal.classList.add('hidden');
+              }, "Choose File");
+          });
+
+          dom.fileImporter.addEventListener('change', async (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+
+              const reader = new FileReader();
+              reader.onload = async (event) => {
+                  try {
+                      const csv = event.target.result;
+                      const lines = csv.split(/[\r\n]+/).filter(line => line.trim() !== '');
+                      if (lines.length < 2) throw new Error("CSV must have a header and at least one data row.");
+
+                      const header = parseCsvLine(lines[0].toUpperCase().trim());
+                      const requiredHeaders = ['TRIAL_ID', 'YEAR', 'SEASON', 'TRIAL_NAME', 'CHARACTERS', 'GENOTYPES'];
+                      const headerMap = requiredHeaders.reduce((acc, h, i) => ({...acc, [h]: header.indexOf(h)}), {});
+                      
+                      for (const req of requiredHeaders) {
+                          if (headerMap[req] === -1) {
+                              throw new Error(`Invalid header. Missing column: ${req}. Header must contain: ${requiredHeaders.join(',')}`);
+                          }
+                      }
+                      
+                      let importedCount = 0;
+                      let mergedCount = 0;
+                      let skippedCount = 0;
+
+                      for (let i = 1; i < lines.length; i++) {
+                          const values = parseCsvLine(lines[i]);
+                          if (values.length === 0 || !values[headerMap.TRIAL_ID]) continue;
+                          
+                          const genotypeNames = [...new Set((values[headerMap.GENOTYPES] || "").split(',').map(g => g.trim()).filter(Boolean))];
+                          const newTrialData = {
+                              trialId: values[headerMap.TRIAL_ID], year: values[headerMap.YEAR], season: values[headerMap.SEASON], name: values[headerMap.TRIAL_NAME],
+                              characters: parseCharactersInput(values[headerMap.CHARACTERS] || ""),
+                              genotypes: genotypeNames.map(name => ({ name, isMerged: false })),
+                          };
+
+                          if (!newTrialData.name || !newTrialData.characters) {
+                              skippedCount++;
+                              continue;
+                          }
+                          
+                          const existingTrial = trials.find(t => t.name === newTrialData.name);
+
+                          if (existingTrial) {
+                              const decision = await showMergePrompt(newTrialData, existingTrial);
+                              if (decision === 'merge') {
+                                  const existingCharNames = new Set(existingTrial.characters.map(c => c.name));
+                                  newTrialData.characters.forEach(newChar => {
+                                      if (!existingCharNames.has(newChar.name)) {
+                                          existingTrial.characters.push({ ...newChar, isMerged: true });
+                                      }
+                                  });
+                                  const existingGenoNames = new Set(existingTrial.genotypes.map(g => g.name));
+                                  newTrialData.genotypes.forEach(newGeno => {
+                                      if (!existingGenoNames.has(newGeno.name)) {
+                                          existingTrial.genotypes.push({ ...newGeno, isMerged: true });
+                                      }
+                                  });
+                                  mergedCount++;
+                              } else if (decision === 'new') {
+                                  trials.push({ ...newTrialData, internalId: crypto.randomUUID() });
+                                  importedCount++;
+                              } else {
+                                  skippedCount++;
+                              }
+                          } else {
+                              trials.push({ ...newTrialData, internalId: crypto.randomUUID() });
+                              importedCount++;
+                          }
+                      }
+                      
+                      saveTrials();
+                      renderTrialButtons();
+                      let summaryMessage = `${importedCount} trial(s) imported. ${mergedCount} merged. ${skippedCount} skipped.`;
+                      showModalAlert('Import Complete', summaryMessage, () => dom.alertModal.classList.add('hidden'));
+
+                  } catch (error) {
+                      showModalAlert('Import Error', `Could not process file.<br><br><small>Details: ${error.message}</small>`, () => dom.alertModal.classList.add('hidden'));
+                  }
+              };
+              reader.readAsText(file);
+              e.target.value = null; 
+          });
+
+          dom.toggleRemarksBtn.addEventListener("click", () => {
+              const isHidden = dom.remarksWrapper.classList.toggle("hidden");
+              dom.toggleRemarksBtn.textContent = isHidden ? "Show" : "Hide";
+              if (!isHidden) {
+                  dom.remarksInput.focus();
+              }
+          });
+
+          dom.settingsBtn.addEventListener('click', () => dom.settingsModal.classList.remove('hidden'));
+          dom.settingsModalCloseBtn.addEventListener('click', () => dom.settingsModal.classList.add('hidden'));
+          dom.charLimitInput.addEventListener('change', (e) => { const newLimit = parseInt(e.target.value, 10); if (newLimit > 0 && newLimit <= 20) { characterLimit = newLimit; dom.charLimitDisplay.textContent = characterLimit; saveSettings(); } else { e.target.value = characterLimit; } });
+          dom.soundToggle.addEventListener('change', (e) => { isSoundEnabled = e.target.checked; saveSettings(); });
+          dom.fixedPrevBtn.addEventListener("click", prev);
+          dom.fixedNextBtn.addEventListener("click", next);
+          dom.startRecordingBtn.addEventListener('click', () => { if (selectedCharacters.length > 0) startDataEntry(); });
+          dom.backToTrialsFromCharSelectBtn.addEventListener('click', () => updateView('trial'));
+          dom.changeTrialBtn.addEventListener("click", backToTrialSelection);
+          dom.goToSummaryBtn.addEventListener("click", prepareExportScreen);
+          dom.backToTrialsBtn.addEventListener("click", backToTrialSelection);
+          dom.exportCsvBtn.addEventListener("click", exportCSV);
+          dom.exportJsonBtn.addEventListener("click", exportJSON);
+          dom.backToEditBtn.addEventListener("click", () => updateView("entry"));
+          dom.modalCloseBtn.addEventListener("click", () => dom.alertModal.classList.add("hidden"));
+          dom.exportAllExcelBtn.addEventListener("click", exportAllToExcel);
+          dom.clearAllDataBtn.addEventListener("click", handleClearAllData);
+          dom.cameraCloseBtn.addEventListener("click", closeCamera);
+          dom.capturePhotoBtn.addEventListener("click", capturePhoto);
+          
+          const handleTableRowClick = (e) => {
+              const row = e.target.closest("tr.clickable-row");
+              if (!row) return;
+              const index = parseInt(row.dataset.genotypeIndex, 10);
+              if (!isNaN(index)) {
+                  state.currentIndex = index;
+                  saveState();
+                  updateView("entry");
+                  renderCurrentForm();
+              }
+          };
+          dom.reviewTableContainer.addEventListener("click", handleTableRowClick);
+          dom.resultsTableContainer.addEventListener("click", handleTableRowClick);
+          
+          dom.entryStep.addEventListener("input", (e) => {
+              if (!currentTrial) return;
+              const genotypeName = currentTrial.genotypes[state.currentIndex].name;
+              const genotypeData = state.data[genotypeName];
+              if (e.target.matches("#entry-form .input")) {
+                  genotypeData[e.target.dataset.charName] = e.target.value;
+              } else if (e.target.matches("#remarks-input")) {
+                  genotypeData.remarks = e.target.value;
+              }
+              saveState();
+          });
+          
+          dom.entryStep.addEventListener("keydown", (e) => {
+            if (!currentTrial) return;
+
+            if (e.ctrlKey && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+              e.preventDefault();
+              if (e.key === 'ArrowRight') {
+                next();
+              } else if (e.key === 'ArrowLeft') {
+                prev();
+              }
+              return; 
+            }
+
+            const key = e.key;
+            const target = e.target;
+            
+            if ((key === 'Enter' || key === 'Tab') && target.matches('#entry-form .input')) {
+              e.preventDefault();
+              
+              const inputs = Array.from(dom.entryForm.querySelectorAll('.input'));
+              const currentIndex = inputs.indexOf(target);
+              const isLastInput = currentIndex === inputs.length - 1;
+
+              if (!isLastInput) {
+                inputs[currentIndex + 1].focus();
+                inputs[currentIndex + 1].select();
+              } else {
+                target.blur();
+                next(); 
+              }
+              return;
+            }
+            
+            if (key === 'Tab' && !e.shiftKey && target.matches('#remarks-input')) {
+                if (state.currentIndex < currentTrial.genotypes.length - 1) {
+                    e.preventDefault();
+                    next();
+                }
+            }
+          });
+          
+          dom.entryStep.addEventListener("click", (e) => {
+              const button = e.target.closest("[data-action]");
+              if (button) {
+                  if (!currentTrial) return;
+                  const action = button.dataset.action;
+                  if (action === 'camera') {
+                      openCamera();
+                      return;
+                  }
+
+                  const genotypeName = currentTrial.genotypes[state.currentIndex].name;
+                  const genotypeData = state.data[genotypeName];
+                  if (action === "favorite") genotypeData.isFavorite = !genotypeData.isFavorite;
+                  if (action === "review") genotypeData.needsReview = !genotypeData.needsReview;
+                  
+                  renderCurrentForm();
+                  saveState();
+              }
+          });
+          
+          dom.characterSelectionContainer.addEventListener('change', (e) => {
+              if (e.target.type === 'checkbox') {
+                  const allCheckboxes = Array.from(dom.characterSelectionContainer.querySelectorAll('input:checked'));
+                  selectedCharacters = allCheckboxes.map(cb => {
+                      const name = cb.dataset.charName;
+                      return currentTrial.characters.find(c => c.name === name);
+                  });
+                  if (selectedCharacters.length > characterLimit) {
+                      e.target.checked = false;
+                      selectedCharacters.pop();
+                      showModalAlert('Limit Reached', `You can select a maximum of ${characterLimit} characters at a time.`, () => dom.alertModal.classList.add('hidden'));
+                  }
+                  dom.startRecordingBtn.disabled = selectedCharacters.length === 0;
+              }
+          });
+          
+          dom.trialButtonsContainer.addEventListener("click", (e) => {
+              const button = e.target.closest("button[data-action]");
+              if (!button) return;
+              
+              e.stopPropagation();
+              const action = button.dataset.action;
+              const internalId = button.dataset.id;
+              const trialToActOn = trials.find(t => t.internalId === internalId);
+
+              if (!trialToActOn) return;
+
+              if (action === 'edit') {
+                  editingTrialInternalId = internalId;
+                  dom.trialModalTitle.textContent = 'Edit Trial';
+                  dom.trialIdInput.value = trialToActOn.trialId;
+                  dom.trialIdInput.disabled = true;
+                  dom.trialYearInput.value = trialToActOn.year;
+                  dom.trialSeasonInput.value = trialToActOn.season;
+                  dom.trialNameInput.value = trialToActOn.name;
+                  dom.trialGenotypesInput.value = trialToActOn.genotypes.map(g => g.name).join(', ');
+                  dom.trialCharactersInput.value = trialToActOn.characters.map(c => `${c.name}:${c.type}`).join(', ');
+                  dom.trialModal.classList.remove('hidden');
+              } else if (action === 'delete') {
+                  showConfirmationPrompt(
+                      'Delete Trial?', 
+                      `Are you sure you want to delete the trial "${getTrialFullName(trialToActOn)}"? This will also delete all its recorded data.`, 
+                      () => {
+                          trials = trials.filter(t => t.internalId !== internalId);
+                          localStorage.removeItem(getStorageKey(internalId));
+                          saveTrials();
+                          renderTrialButtons();
+                      },
+                      null,
+                      "Yes, Delete",
+                      "Cancel"
+                  );
+              }
+          });
+
+          function initialize() {
+              initAudio();
+              loadSettings();
+              loadTrials();
+              const lastTrialInternalId = localStorage.getItem("lastActiveTrial");
+              
+              if (lastTrialInternalId && trials.some(t=> t.internalId === lastTrialInternalId)) {
+                  const lastTrial = trials.find(t=> t.internalId === lastTrialInternalId);
+                  showConfirmationPrompt(
+                      "Resume Session?",
+                      `Resume last session for "${getTrialFullName(lastTrial)}"?`,
+                      () => { // onConfirm
+                          loadTrial(lastTrialInternalId);
+                      },
+                      () => { // onCancel
+                          localStorage.removeItem("lastActiveTrial");
+                          updateView('trial');
+                      },
+                      "Yes, Resume",
+                      "No, Start Over"
+                  );
+              } else {
+                  updateView("trial");
+              }
+          }
+
+          initialize();
+
+        } catch (err) {
+          document.body.innerHTML = `<div style="padding: 1rem; background-color: var(--error-color); color: var(--error-content);">A critical error occurred: ${err.message}. Please refresh the page.</div>`;
+          console.error(err);
+        }
+      });
+    </script>
+    <footer class="site-footer">
+    Copyright &copy; <span id="year"></span> <a href="https://github.com/Sarath-SD10/Multi-Trail-Data-Recorder" target="_blank">MLTDR</a>
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+    </script>
+</footer>
+  </body>
+</html>
