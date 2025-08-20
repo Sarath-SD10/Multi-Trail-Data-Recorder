@@ -75,7 +75,7 @@ Each variable definition should follow this format:
 
 You can list multiple variables in a single row, separated by commas.
 
-| Variable | Acronym | Data Type | Example |
+| Trait | Acronym | Data Type | Example |
 | :--- | :--- | :--- | :--- |
 | Plant Height | `PH` | `num` | `PH:num` |
 | Plant Type | `PT` | `text` | `PT:text` |
