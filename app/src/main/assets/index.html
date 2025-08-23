@@ -418,7 +418,7 @@
         right: 1rem;
       }
       
-      /* --- Original Custom Styles (Kept) --- */
+      /* --- Original Custom Styles --- */
       .fade-in { animation: fadeIn 0.5s ease-in-out; }
       @keyframes fadeIn {
         from { opacity: 0; transform: translateY(10px); }
@@ -1371,85 +1371,6 @@
               return name.replace(/[:\\/?*[\]]/g, "").substring(0, 31);
           }
           
-          /*
-          function exportAllToExcel() {
-              if (trials.length === 0) {
-                  showModalAlert("No Data", "There are no trials to export.", () => dom.alertModal.classList.add('hidden'));
-                  return;
-              }
-
-              const proceedWithExport = () => {
-                const wb = XLSX.utils.book_new();
-                trials.forEach(trial => {
-                    try {
-                        const sheetData = [];
-                        sheetData.push(["Trial ID:", trial.trialId]);
-                        sheetData.push(["Trial Name:", trial.name]);
-                        sheetData.push(["Year:", trial.year]);
-                        sheetData.push(["Season:", trial.season]);
-                        sheetData.push([]);
-
-                        const characterNames = trial.characters.map(c => c.name);
-                        const headers = ["Genotype", ...characterNames, "isFavorite", "needsReview", "Remarks"];
-                        sheetData.push(headers);
-
-                        let sessionData = null;
-                        const sessionDataString = localStorage.getItem(getStorageKey(trial.internalId));
-                        if (sessionDataString) {
-                            try {
-                                sessionData = JSON.parse(sessionDataString);
-                            } catch (e) {
-                                console.error(`Could not parse data for trial ${trial.name}:`, e);
-                            }
-                        }
-
-                        trial.genotypes.forEach(genoObj => {
-                            const d = sessionData?.data?.[genoObj.name] || {};
-                            const row = [
-                                genoObj.name,
-                                ...characterNames.map(name => d[name] || ""),
-                                d.isFavorite || false,
-                                d.needsReview || false,
-                                d.remarks || ""
-                            ];
-                            sheetData.push(row);
-                        });
-                        
-                        const ws = XLSX.utils.aoa_to_sheet(sheetData);
-                        const sheetName = sanitizeSheetName(getTrialFullName(trial));
-                        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-                    } catch (error) {
-                        console.error(`Failed to process and export trial: ${trial?.name || 'Unknown Trial'}. Skipping.`, error);
-                    }
-                });
-
-                try {
-                    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                    const date = getFormattedDate();
-                    const fileName = `All_Trial_Data_${date}.xlsx`;
-                    const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-                    exportFile(excelBuffer, fileName, mimeType, '');
-                } catch (error) {
-                    console.error("Failed to write the final Excel file.", error);
-                    showModalAlert("Export Failed", "An error occurred while generating the final Excel file.", () => dom.alertModal.classList.add('hidden'));
-                }
-              };
-
-              if (trials.length > 5) { 
-                  showConfirmationPrompt(
-                    "Large Export Warning",
-                    `You are exporting ${trials.length} trials. On some devices this might cause the browser to crash. Do you want to continue?`,
-                    proceedWithExport,
-                    null,
-                    "Yes, Continue",
-                    "Cancel"
-                  );
-              } else {
-                  proceedWithExport();
-              }
-          }
-          
-          */
           function exportAllToExcel() {
               if (trials.length === 0) {
                   showModalAlert("No Data", "There are no trials to export.", () => dom.alertModal.classList.add('hidden'));
@@ -1563,7 +1484,7 @@
                   return;
               }
               try {
-                  cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                  cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', focusMode: 'continuous', width: { ideal: 1900 }, height: { ideal: 1900 } } });
                   dom.cameraVideo.srcObject = cameraStream;
                   dom.cameraModal.classList.remove('hidden');
               } catch (err) {
@@ -1608,11 +1529,11 @@
 
               // Construct the new filename and the folder name from trial details
               const trialFolderName = getTrialFullName(currentTrial);
-              const fileName = `${currentTrial.trialId}-${currentTrial.season}_${currentTrial.year}-${currentTrial.name}-${genotypeName}-${photoNumber}.jpg`;
+              const fileName = `${currentTrial.trialId}-${currentTrial.season}_${currentTrial.year}-${currentTrial.name}-${genotypeName} (${photoNumber}).jpg`;
               
               canvas.toBlob(blob => {
                   exportFile(blob, fileName, 'image/jpeg', trialFolderName);
-              }, 'image/jpeg', 0.9);
+              }, 'image/jpeg', 1.0);
 
               closeCamera();
           }
