@@ -2,7 +2,7 @@
 
 <p align="center"><img src="https://socialify.git.ci/Sarath-SD10/Multi-Trail-Data-Recorder/image?custom_language=Java&amp;description=1&amp;font=Inter&amp;forks=1&amp;issues=1&amp;language=1&amp;name=1&amp;owner=1&amp;pattern=Charlie+Brown&amp;pulls=1&amp;stargazers=1&amp;theme=Auto" alt="project-image"></p>
 
-[![Android CI](https://github.com/Sarath-SD10/Multi-Trail-Data-Recorder/actions/workflows/android.yml/badge.svg)](https://github.com/Sarath-SD10/Multi-Trail-Data-Recorder/actions/workflows/android.yml)
+[![Android CI](https://github.com/S-Sarath10/Multi-Trail-Data-Recorder/actions/workflows/android.yml/badge.svg)](https://github.com/S-Sarath10/Multi-Trail-Data-Recorder/actions/workflows/android.yml)
 
 ----
 # Multi-Trail-Data-Recorder
@@ -111,7 +111,7 @@ You can change this limit to any number you prefer. However, be aware that choos
 Clone this repository:
 
 ```bash
-git clone https://github.com/Sarath-SD10/Multi-Trail-Data-Recorder.git
+git clone https://github.com/S-Sarath10/Multi-Trail-Data-Recorder.git
 ```
 
 Open the `index.html` file in a web browser or deploy on an Android device supporting web applications.
